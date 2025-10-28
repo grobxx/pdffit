@@ -24,14 +24,31 @@
                     <label for="qualitySlider">Целевой размер файла (% от оригинала):</label>
                     <input type="range" id="qualitySlider" min="10" max="100" step="5" value="50">
                     <div class="quality-display" id="qualityValue">50% от оригинала</div>
+                    <div class="quality-hint">
+                        <small>
+                            <strong>10-40%:</strong> Максимальное сжатие (потеря качества изображений)<br>
+                            <strong>45-70%:</strong> Оптимальное сжатие (незначительная потеря качества)<br>
+                            <strong>75-100%:</strong> Минимальное сжатие (сохранение качества)
+                        </small>
+                    </div>
                 </div>
                 <button type="submit" class="btn btn-success">Сжать PDF</button>
             </form>
+
+            <!-- Прогресс-бар загрузки -->
+            <div class="upload-progress-container" id="compressUploadProgress">
+                <div class="upload-progress-bar">
+                    <span id="compressUploadProgressText">Загрузка: 0%</span>
+                </div>
+            </div>
+
+            <!-- Прогресс-бар обработки -->
             <div class="progress-container" id="compressProgress">
                 <div class="progress-bar">
                     <span id="compressProgressText">0%</span>
                 </div>
             </div>
+
             <button class="download-btn" id="compressDownload">⬇ Скачать результат</button>
             <a href="https://pay.cloudtips.ru/p/c188dc39" target="_blank" rel="noopener noreferrer" class="support-btn" id="compressSupport">💖 Поддержать проект</a>
             <div id="compressStatus" class="status"></div>
@@ -52,11 +69,21 @@
                 </div>
                 <button type="submit" class="btn btn-primary">Удалить страницу</button>
             </form>
+
+            <!-- Прогресс-бар загрузки -->
+            <div class="upload-progress-container" id="deleteUploadProgress">
+                <div class="upload-progress-bar">
+                    <span id="deleteUploadProgressText">Загрузка: 0%</span>
+                </div>
+            </div>
+
+            <!-- Прогресс-бар обработки -->
             <div class="progress-container" id="deleteProgress">
                 <div class="progress-bar">
                     <span id="deleteProgressText">0%</span>
                 </div>
             </div>
+
             <button class="download-btn" id="deleteDownload">⬇ Скачать результат</button>
             <a href="https://pay.cloudtips.ru/p/c188dc39" target="_blank" rel="noopener noreferrer" class="support-btn" id="deleteSupport">💖 Поддержать проект</a>
             <div id="deleteStatus" class="status"></div>
