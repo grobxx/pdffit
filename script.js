@@ -93,8 +93,8 @@ document.getElementById('compressForm').addEventListener('submit', async (e) => 
     progressBar.style.width = '0%';
 
     const stages = [
-        { from: 0, to: 30, duration: 500 },
-        { from: 30, to: 70, duration: 800 }
+        { from: 0, to: 20, duration: 1000 },  // Медленнее для больших файлов
+        { from: 20, to: 60, duration: 2000 }  // Даем больше времени на обработку
     ];
 
     try {
@@ -106,7 +106,7 @@ document.getElementById('compressForm').addEventListener('submit', async (e) => 
 
         await progressAnimation;
         const response = await responsePromise;
-        await animateProgress(progressBar, progressText, [{ from: 70, to: 100, duration: 400 }]);
+        await animateProgress(progressBar, progressText, [{ from: 60, to: 100, duration: 1000 }]);
 
         if (!response.ok) {
             const errorData = await response.json();
@@ -151,74 +151,87 @@ document.getElementById('compressForm').addEventListener('submit', async (e) => 
 });
 
 // Обработка формы удаления
-document.getElementById('deleteForm').addEventListener('submit', async (e) => {
+document.getElementById('compressForm').addEventListener('submit', async (e) => {
     e.preventDefault();
 
     const formData = new FormData(e.target);
-    const file = document.getElementById('deleteFile').files[0];
-    const pageNumber = document.getElementById('pageNumber').value;
+    const file = document.getElementById('compressFile').files[0];
+    const quality = qualitySlider.value;
 
     if (!file) {
         alert('Пожалуйста, выберите файл');
         return;
     }
 
-    if (!pageNumber || pageNumber < 1) {
-        alert('Пожалуйста, укажите корректный номер страницы');
-        return;
+    // Предупреждение для больших файлов
+    const fileSizeMB = file.size / 1024 / 1024;
+    if (fileSizeMB > 30) {
+        const proceed = confirm(`Файл большой (${fileSizeMB.toFixed(1)} MB). Обработка может занять до 2-3 минут. Продолжить?`);
+        if (!proceed) return;
     }
 
-    const statusDiv = document.getElementById('deleteStatus');
+    formData.append('quality', quality);
+
+    const statusDiv = document.getElementById('compressStatus');
     const submitBtn = e.target.querySelector('button[type="submit"]');
-    const progressContainer = document.getElementById('deleteProgress');
+    const progressContainer = document.getElementById('compressProgress');
     const progressBar = progressContainer.querySelector('.progress-bar');
-    const progressText = document.getElementById('deleteProgressText');
-    const downloadBtn = document.getElementById('deleteDownload');
-    const supportBtn = document.getElementById('deleteSupport');
+    const progressText = document.getElementById('compressProgressText');
+    const downloadBtn = document.getElementById('compressDownload');
+    const supportBtn = document.getElementById('compressSupport');
 
     downloadBtn.style.display = 'none';
     supportBtn.style.display = 'none';
     statusDiv.style.display = 'none';
 
     statusDiv.className = 'status loading';
-    statusDiv.textContent = 'Загрузка и обработка файла...';
+    statusDiv.textContent = 'Загрузка и обработка файла... Это может занять несколько минут.';
     submitBtn.disabled = true;
 
     progressContainer.style.display = 'block';
     progressBar.style.width = '0%';
 
+    // УВЕЛИЧЕННАЯ ДЛИТЕЛЬНОСТЬ для больших файлов
     const stages = [
-        { from: 0, to: 25, duration: 400 },
-        { from: 25, to: 65, duration: 700 }
+        { from: 0, to: 20, duration: 1000 },
+        { from: 20, to: 60, duration: 2000 }
     ];
 
     try {
         const progressAnimation = animateProgress(progressBar, progressText, stages);
-        const responsePromise = fetch('/delete-page', {
+
+        // Отправляем запрос (без timeout в fetch)
+        const responsePromise = fetch('/compress', {
             method: 'POST',
             body: formData
         });
 
         await progressAnimation;
+
+        // Обновляем статус во время ожидания
+        statusDiv.textContent = 'Обработка файла на сервере... Пожалуйста, подождите.';
+
         const response = await responsePromise;
-        await animateProgress(progressBar, progressText, [{ from: 65, to: 100, duration: 350 }]);
+        await animateProgress(progressBar, progressText, [{ from: 60, to: 100, duration: 1000 }]);
 
         if (!response.ok) {
             const errorData = await response.json();
-            throw new Error(errorData.error || 'Ошибка при удалении страницы');
+            throw new Error(errorData.error || 'Ошибка при сжатии файла');
         }
 
         const blob = await response.blob();
         const fileSize = response.headers.get('X-File-Size');
+        const originalSize = file.size;
         const newSize = fileSize ? parseInt(fileSize) : blob.size;
+        const savings = ((originalSize - newSize) / originalSize * 100).toFixed(0);
 
         const url = window.URL.createObjectURL(blob);
 
-        downloadBtn.innerHTML = `⬇ Скачать результат (${(newSize / 1024 / 1024).toFixed(2)} MB)`;
+        downloadBtn.innerHTML = `⬇ Скачать (${(originalSize / 1024 / 1024).toFixed(2)} MB → ${(newSize / 1024 / 1024).toFixed(2)} MB, экономия ${savings}%)`;
         downloadBtn.onclick = () => {
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'deleted_page_' + file.name;
+            a.download = 'compressed_' + file.name;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -231,13 +244,13 @@ document.getElementById('deleteForm').addEventListener('submit', async (e) => {
 
         progressContainer.style.display = 'none';
         statusDiv.className = 'status success';
-        statusDiv.textContent = `Страница ${pageNumber} успешно удалена!`;
+        statusDiv.textContent = `Файл успешно сжат до ${quality}% от оригинала!`;
 
     } catch (error) {
-        console.error('Ошибка удаления:', error);
+        console.error('Ошибка сжатия:', error);
         progressContainer.style.display = 'none';
         statusDiv.className = 'status error';
-        statusDiv.textContent = `Ошибка: ${error.message}`;
+        statusDiv.textContent = `Ошибка: ${error.message}. Попробуйте файл меньшего размера или увеличьте % качества.`;
     } finally {
         submitBtn.disabled = false;
     }
