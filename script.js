@@ -36,13 +36,13 @@ document.getElementById('deleteFile').addEventListener('change', (e) => {
     }
 });
 
-// Функция для обновления прогресса
+// Функция обновления прогресса
 function updateProgress(progressBar, progressText, percent) {
     progressBar.style.width = percent + '%';
     progressText.textContent = percent + '%';
 }
 
-// Функция симуляции прогресса
+// Функция анимации прогресса
 async function animateProgress(progressBar, progressText, stages) {
     for (const stage of stages) {
         const start = stage.from;
@@ -58,99 +58,40 @@ async function animateProgress(progressBar, progressText, stages) {
     }
 }
 
-// Обработка формы сжатия
-document.getElementById('compressForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
+// Функция отправки с прогресс-баром загрузки (XMLHttpRequest)
+function uploadWithProgress(url, formData, onUploadProgress) {
+    return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
 
-    const formData = new FormData(e.target);
-    const file = document.getElementById('compressFile').files[0];
-    const quality = qualitySlider.value;
-
-    if (!file) {
-        alert('Пожалуйста, выберите файл');
-        return;
-    }
-
-    formData.append('quality', quality);
-
-    const statusDiv = document.getElementById('compressStatus');
-    const submitBtn = e.target.querySelector('button[type="submit"]');
-    const progressContainer = document.getElementById('compressProgress');
-    const progressBar = progressContainer.querySelector('.progress-bar');
-    const progressText = document.getElementById('compressProgressText');
-    const downloadBtn = document.getElementById('compressDownload');
-    const supportBtn = document.getElementById('compressSupport');
-
-    downloadBtn.style.display = 'none';
-    supportBtn.style.display = 'none';
-    statusDiv.style.display = 'none';
-
-    statusDiv.className = 'status loading';
-    statusDiv.textContent = 'Загрузка и обработка файла...';
-    submitBtn.disabled = true;
-
-    progressContainer.style.display = 'block';
-    progressBar.style.width = '0%';
-
-    const stages = [
-        { from: 0, to: 20, duration: 1000 },  // Медленнее для больших файлов
-        { from: 20, to: 60, duration: 2000 }  // Даем больше времени на обработку
-    ];
-
-    try {
-        const progressAnimation = animateProgress(progressBar, progressText, stages);
-        const responsePromise = fetch('/compress', {
-            method: 'POST',
-            body: formData
+        // Отслеживание прогресса загрузки
+        xhr.upload.addEventListener('progress', (e) => {
+            if (e.lengthComputable) {
+                const percentComplete = Math.round((e.loaded / e.total) * 100);
+                onUploadProgress(percentComplete);
+            }
         });
 
-        await progressAnimation;
-        const response = await responsePromise;
-        await animateProgress(progressBar, progressText, [{ from: 60, to: 100, duration: 1000 }]);
+        // Обработка завершения
+        xhr.addEventListener('load', () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+                resolve(xhr);
+            } else {
+                reject(new Error(xhr.statusText || 'Ошибка сервера'));
+            }
+        });
 
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || 'Ошибка при сжатии файла');
-        }
+        // Обработка ошибок
+        xhr.addEventListener('error', () => reject(new Error('Ошибка сети')));
+        xhr.addEventListener('abort', () => reject(new Error('Загрузка отменена')));
 
-        const blob = await response.blob();
-        const fileSize = response.headers.get('X-File-Size');
-        const originalSize = file.size;
-        const newSize = fileSize ? parseInt(fileSize) : blob.size;
-        const savings = ((originalSize - newSize) / originalSize * 100).toFixed(0);
+        // Отправка запроса
+        xhr.open('POST', url);
+        xhr.responseType = 'blob';
+        xhr.send(formData);
+    });
+}
 
-        const url = window.URL.createObjectURL(blob);
-
-        downloadBtn.innerHTML = `⬇ Скачать (${(originalSize / 1024 / 1024).toFixed(2)} MB → ${(newSize / 1024 / 1024).toFixed(2)} MB, экономия ${savings}%)`;
-        downloadBtn.onclick = () => {
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'compressed_' + file.name;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-        };
-        downloadBtn.style.display = 'block';
-
-        setTimeout(() => {
-            supportBtn.style.display = 'block';
-        }, 300);
-
-        progressContainer.style.display = 'none';
-        statusDiv.className = 'status success';
-        statusDiv.textContent = `Файл успешно сжат до ${quality}% от оригинала!`;
-
-    } catch (error) {
-        console.error('Ошибка сжатия:', error);
-        progressContainer.style.display = 'none';
-        statusDiv.className = 'status error';
-        statusDiv.textContent = `Ошибка: ${error.message}`;
-    } finally {
-        submitBtn.disabled = false;
-    }
-});
-
-// Обработка формы удаления
+// Обработка формы сжатия
 document.getElementById('compressForm').addEventListener('submit', async (e) => {
     e.preventDefault();
 
@@ -174,59 +115,62 @@ document.getElementById('compressForm').addEventListener('submit', async (e) => 
 
     const statusDiv = document.getElementById('compressStatus');
     const submitBtn = e.target.querySelector('button[type="submit"]');
+    const uploadProgressContainer = document.getElementById('compressUploadProgress');
+    const uploadProgressBar = uploadProgressContainer.querySelector('.upload-progress-bar');
+    const uploadProgressText = document.getElementById('compressUploadProgressText');
     const progressContainer = document.getElementById('compressProgress');
     const progressBar = progressContainer.querySelector('.progress-bar');
     const progressText = document.getElementById('compressProgressText');
     const downloadBtn = document.getElementById('compressDownload');
     const supportBtn = document.getElementById('compressSupport');
 
+    // Скрываем предыдущие результаты
     downloadBtn.style.display = 'none';
     supportBtn.style.display = 'none';
     statusDiv.style.display = 'none';
+    progressContainer.style.display = 'none';
 
+    // Показываем статус
     statusDiv.className = 'status loading';
-    statusDiv.textContent = 'Загрузка и обработка файла... Это может занять несколько минут.';
+    statusDiv.textContent = 'Загрузка файла на сервер...';
     submitBtn.disabled = true;
 
-    progressContainer.style.display = 'block';
-    progressBar.style.width = '0%';
-
-    // УВЕЛИЧЕННАЯ ДЛИТЕЛЬНОСТЬ для больших файлов
-    const stages = [
-        { from: 0, to: 20, duration: 1000 },
-        { from: 20, to: 60, duration: 2000 }
-    ];
+    // Показываем прогресс загрузки
+    uploadProgressContainer.style.display = 'block';
+    uploadProgressBar.style.width = '0%';
 
     try {
-        const progressAnimation = animateProgress(progressBar, progressText, stages);
-
-        // Отправляем запрос (без timeout в fetch)
-        const responsePromise = fetch('/compress', {
-            method: 'POST',
-            body: formData
+        // Загружаем файл с отслеживанием прогресса
+        const xhr = await uploadWithProgress('/compress', formData, (percent) => {
+            uploadProgressBar.style.width = percent + '%';
+            uploadProgressText.textContent = `Загрузка: ${percent}%`;
         });
 
-        await progressAnimation;
+        // Скрываем прогресс загрузки
+        uploadProgressContainer.style.display = 'none';
 
-        // Обновляем статус во время ожидания
-        statusDiv.textContent = 'Обработка файла на сервере... Пожалуйста, подождите.';
+        // Показываем прогресс обработки
+        statusDiv.textContent = 'Обработка файла на сервере... Это может занять несколько минут.';
+        progressContainer.style.display = 'block';
+        progressBar.style.width = '0%';
 
-        const response = await responsePromise;
-        await animateProgress(progressBar, progressText, [{ from: 60, to: 100, duration: 1000 }]);
+        // Анимируем прогресс обработки
+        const processingTime = fileSizeMB > 40 ? 3000 : fileSizeMB > 20 ? 2000 : 1500;
+        await animateProgress(progressBar, progressText, [
+            { from: 0, to: 100, duration: processingTime }
+        ]);
 
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || 'Ошибка при сжатии файла');
-        }
-
-        const blob = await response.blob();
-        const fileSize = response.headers.get('X-File-Size');
+        // Получаем blob
+        const blob = xhr.response;
+        const fileSize = xhr.getResponseHeader('X-File-Size');
         const originalSize = file.size;
         const newSize = fileSize ? parseInt(fileSize) : blob.size;
         const savings = ((originalSize - newSize) / originalSize * 100).toFixed(0);
 
+        // Создаем URL для скачивания
         const url = window.URL.createObjectURL(blob);
 
+        // Настраиваем кнопку скачивания
         downloadBtn.innerHTML = `⬇ Скачать (${(originalSize / 1024 / 1024).toFixed(2)} MB → ${(newSize / 1024 / 1024).toFixed(2)} MB, экономия ${savings}%)`;
         downloadBtn.onclick = () => {
             const a = document.createElement('a');
@@ -238,19 +182,131 @@ document.getElementById('compressForm').addEventListener('submit', async (e) => 
         };
         downloadBtn.style.display = 'block';
 
+        // Показываем кнопку поддержки
         setTimeout(() => {
             supportBtn.style.display = 'block';
         }, 300);
 
+        // Скрываем прогресс
         progressContainer.style.display = 'none';
+
+        // Показываем успех
         statusDiv.className = 'status success';
-        statusDiv.textContent = `Файл успешно сжат до ${quality}% от оригинала!`;
+        statusDiv.textContent = `Файл успешно сжат! Экономия места: ${savings}%`;
 
     } catch (error) {
         console.error('Ошибка сжатия:', error);
+        uploadProgressContainer.style.display = 'none';
         progressContainer.style.display = 'none';
         statusDiv.className = 'status error';
-        statusDiv.textContent = `Ошибка: ${error.message}. Попробуйте файл меньшего размера или увеличьте % качества.`;
+        statusDiv.textContent = `Ошибка: ${error.message}. Попробуйте файл меньшего размера.`;
+    } finally {
+        submitBtn.disabled = false;
+    }
+});
+
+// Обработка формы удаления
+document.getElementById('deleteForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const formData = new FormData(e.target);
+    const file = document.getElementById('deleteFile').files[0];
+    const pageNumber = document.getElementById('pageNumber').value;
+
+    if (!file) {
+        alert('Пожалуйста, выберите файл');
+        return;
+    }
+
+    if (!pageNumber || pageNumber < 1) {
+        alert('Пожалуйста, укажите корректный номер страницы');
+        return;
+    }
+
+    const statusDiv = document.getElementById('deleteStatus');
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    const uploadProgressContainer = document.getElementById('deleteUploadProgress');
+    const uploadProgressBar = uploadProgressContainer.querySelector('.upload-progress-bar');
+    const uploadProgressText = document.getElementById('deleteUploadProgressText');
+    const progressContainer = document.getElementById('deleteProgress');
+    const progressBar = progressContainer.querySelector('.progress-bar');
+    const progressText = document.getElementById('deleteProgressText');
+    const downloadBtn = document.getElementById('deleteDownload');
+    const supportBtn = document.getElementById('deleteSupport');
+
+    // Скрываем предыдущие результаты
+    downloadBtn.style.display = 'none';
+    supportBtn.style.display = 'none';
+    statusDiv.style.display = 'none';
+    progressContainer.style.display = 'none';
+
+    // Показываем статус
+    statusDiv.className = 'status loading';
+    statusDiv.textContent = 'Загрузка файла на сервер...';
+    submitBtn.disabled = true;
+
+    // Показываем прогресс загрузки
+    uploadProgressContainer.style.display = 'block';
+    uploadProgressBar.style.width = '0%';
+
+    try {
+        // Загружаем файл с отслеживанием прогресса
+        const xhr = await uploadWithProgress('/delete-page', formData, (percent) => {
+            uploadProgressBar.style.width = percent + '%';
+            uploadProgressText.textContent = `Загрузка: ${percent}%`;
+        });
+
+        // Скрываем прогресс загрузки
+        uploadProgressContainer.style.display = 'none';
+
+        // Показываем прогресс обработки
+        statusDiv.textContent = 'Удаление страницы...';
+        progressContainer.style.display = 'block';
+        progressBar.style.width = '0%';
+
+        // Анимируем прогресс обработки
+        await animateProgress(progressBar, progressText, [
+            { from: 0, to: 100, duration: 1000 }
+        ]);
+
+        // Получаем blob
+        const blob = xhr.response;
+        const fileSize = xhr.getResponseHeader('X-File-Size');
+        const newSize = fileSize ? parseInt(fileSize) : blob.size;
+
+        // Создаем URL для скачивания
+        const url = window.URL.createObjectURL(blob);
+
+        // Настраиваем кнопку скачивания
+        downloadBtn.innerHTML = `⬇ Скачать результат (${(newSize / 1024 / 1024).toFixed(2)} MB)`;
+        downloadBtn.onclick = () => {
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'deleted_page_' + file.name;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        };
+        downloadBtn.style.display = 'block';
+
+        // Показываем кнопку поддержки
+        setTimeout(() => {
+            supportBtn.style.display = 'block';
+        }, 300);
+
+        // Скрываем прогресс
+        progressContainer.style.display = 'none';
+
+        // Показываем успех
+        statusDiv.className = 'status success';
+        statusDiv.textContent = `Страница ${pageNumber} успешно удалена!`;
+
+    } catch (error) {
+        console.error('Ошибка удаления:', error);
+        uploadProgressContainer.style.display = 'none';
+        progressContainer.style.display = 'none';
+        statusDiv.className = 'status error';
+        statusDiv.textContent = `Ошибка: ${error.message}`;
     } finally {
         submitBtn.disabled = false;
     }
