@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Конвертер Pro</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>PDF Конвертер Pro</h1>
+        <p class="subtitle">Уменьшить размер файла или удалить страницу</p>
+
+        <!-- Секция сжатия (ПЕРВАЯ) -->
+        <div class="section compress" id="compress-section">
+            <h2>Сжать PDF с настройкой качества</h2>
+            <form id="compressForm" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="compressFile">Выберите PDF файл:</label>
+                    <input type="file" id="compressFile" name="file" accept=".pdf" required>
+                    <div class="file-info" id="compressFileInfo"></div>
+                </div>
+                <div class="form-group">
+                    <label for="qualitySlider">Целевой размер файла (% от оригинала):</label>
+                    <input type="range" id="qualitySlider" min="10" max="100" step="5" value="50">
+                    <div class="quality-display" id="qualityValue">50% от оригинала</div>
+                </div>
+                <button type="submit" class="btn btn-success">Сжать PDF</button>
+            </form>
+            <div class="progress-container" id="compressProgress">
+                <div class="progress-bar">
+                    <span id="compressProgressText">0%</span>
+                </div>
+            </div>
+            <button class="download-btn" id="compressDownload">⬇ Скачать результат</button>
+            <a href="https://pay.cloudtips.ru/p/c188dc39" target="_blank" rel="noopener noreferrer" class="support-btn" id="compressSupport">💖 Поддержать проект</a>
+            <div id="compressStatus" class="status"></div>
+        </div>
+
+        <!-- Секция удаления (ВТОРАЯ) -->
+        <div class="section" id="delete-section">
+            <h2>Удалить страницу</h2>
+            <form id="deleteForm" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="deleteFile">Выберите PDF файл:</label>
+                    <input type="file" id="deleteFile" name="file" accept=".pdf" required>
+                    <div class="file-info" id="deleteFileInfo"></div>
+                </div>
+                <div class="form-group">
+                    <label for="pageNumber">Номер страницы для удаления:</label>
+                    <input type="number" id="pageNumber" name="page_number" min="1" value="1" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Удалить страницу</button>
+            </form>
+            <div class="progress-container" id="deleteProgress">
+                <div class="progress-bar">
+                    <span id="deleteProgressText">0%</span>
+                </div>
+            </div>
+            <button class="download-btn" id="deleteDownload">⬇ Скачать результат</button>
+            <a href="https://pay.cloudtips.ru/p/c188dc39" target="_blank" rel="noopener noreferrer" class="support-btn" id="deleteSupport">💖 Поддержать проект</a>
+            <div id="deleteStatus" class="status"></div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
