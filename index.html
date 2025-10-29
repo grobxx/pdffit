@@ -3,17 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PDF Конвертер Pro</title>
+    <title>PDF Комбайн Pro</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
     <div class="container">
-        <h1>PDF Конвертер Pro</h1>
-        <p class="subtitle">Уменьшить размер файла или удалить страницу</p>
+        <h1>PDF Комбайн Pro</h1>
+        <p class="subtitle">Спецально для моей жены Викули, люблю тебя!!!</p>
 
-        <!-- Секция сжатия (ПЕРВАЯ) -->
-        <div class="section compress" id="compress-section">
-            <h2>Сжать PDF с настройкой качества</h2>
+        <div class="section compress">
+            <h2>Сжать PDF</h2>
             <form id="compressForm" enctype="multipart/form-data">
                 <div class="form-group">
                     <label for="compressFile">Выберите PDF файл:</label>
@@ -21,71 +20,66 @@
                     <div class="file-info" id="compressFileInfo"></div>
                 </div>
                 <div class="form-group">
-                    <label for="qualitySlider">Целевой размер файла (% от оригинала):</label>
+                    <label for="qualitySlider">Качество (%):</label>
                     <input type="range" id="qualitySlider" min="10" max="100" step="5" value="50">
-                    <div class="quality-display" id="qualityValue">50% от оригинала</div>
+                    <div class="quality-display" id="qualityValue">50%</div>
                     <div class="quality-hint">
                         <small>
-                            <strong>10-40%:</strong> Максимальное сжатие (потеря качества изображений)<br>
-                            <strong>45-70%:</strong> Оптимальное сжатие (незначительная потеря качества)<br>
-                            <strong>75-100%:</strong> Минимальное сжатие (сохранение качества)
+                            <strong>10-40%:</strong> Максимальное сжатие (потеря качества)<br>
+                            <strong>45-70%:</strong> Оптимальное сжатие<br>
+                            <strong>75-100%:</strong> Минимальное сжатие
                         </small>
                     </div>
                 </div>
                 <button type="submit" class="btn btn-success">Сжать PDF</button>
             </form>
 
-            <!-- Прогресс-бар загрузки -->
             <div class="upload-progress-container" id="compressUploadProgress">
                 <div class="upload-progress-bar">
                     <span id="compressUploadProgressText">Загрузка: 0%</span>
                 </div>
             </div>
 
-            <!-- Прогресс-бар обработки -->
             <div class="progress-container" id="compressProgress">
                 <div class="progress-bar">
                     <span id="compressProgressText">0%</span>
                 </div>
             </div>
 
-            <button class="download-btn" id="compressDownload">⬇ Скачать результат</button>
-            <a href="https://pay.cloudtips.ru/p/c188dc39" target="_blank" rel="noopener noreferrer" class="support-btn" id="compressSupport">💖 Поддержать проект</a>
+            <button class="download-btn" id="compressDownload">⬇ Скачать</button>
+            <a href="#" class="support-btn" id="compressSupport">💖 Поддержать</a>
             <div id="compressStatus" class="status"></div>
         </div>
 
-        <!-- Секция удаления (ВТОРАЯ) -->
-        <div class="section" id="delete-section">
+        <div class="section">
             <h2>Удалить страницу</h2>
             <form id="deleteForm" enctype="multipart/form-data">
                 <div class="form-group">
-                    <label for="deleteFile">Выберите PDF файл:</label>
+                    <label for="deleteFile">Выберите PDF:</label>
                     <input type="file" id="deleteFile" name="file" accept=".pdf" required>
                     <div class="file-info" id="deleteFileInfo"></div>
                 </div>
                 <div class="form-group">
-                    <label for="pageNumber">Номер страницы для удаления:</label>
+                    <label for="pageNumber">Номер страницы:</label>
                     <input type="number" id="pageNumber" name="page_number" min="1" value="1" required>
                 </div>
                 <button type="submit" class="btn btn-primary">Удалить страницу</button>
             </form>
 
-            <!-- Прогресс-бар загрузки -->
             <div class="upload-progress-container" id="deleteUploadProgress">
                 <div class="upload-progress-bar">
                     <span id="deleteUploadProgressText">Загрузка: 0%</span>
                 </div>
             </div>
 
-            <!-- Прогресс-бар обработки -->
             <div class="progress-container" id="deleteProgress">
                 <div class="progress-bar">
                     <span id="deleteProgressText">0%</span>
                 </div>
             </div>
 
-            <button class="download-btn" id="deleteDownload">⬇ Скачать результат</button>
-            <a href="https://pay.cloudtips.ru/p/c188dc39" target="_blank" rel="noopener noreferrer" class="support-btn" id="deleteSupport">💖 Поддержать проект</a>
+            <button class="download-btn" id="deleteDownload">⬇ Скачать</button>
+            <a href="#" class="support-btn" id="deleteSupport">💖 Поддержать</a>
             <div id="deleteStatus" class="status"></div>
         </div>
     </div>
